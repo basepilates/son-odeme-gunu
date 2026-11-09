@@ -95,6 +95,8 @@ header.top { display: flex; justify-content: space-between; align-items: center;
 .eyebrow { font: 600 12px/1.2 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
 .hero-card { font: 600 19px/1.25 var(--f-body); margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
 .hero-amt { font: 600 36px/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.hero-min { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; margin: 0; }
+.hero-min strong { color: var(--ink); font-weight: 600; }
 .hero-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
 .hero-empty { color: var(--muted); margin: 0; }
 
@@ -115,7 +117,7 @@ header.top { display: flex; justify-content: space-between; align-items: center;
 
 form { display: grid; gap: 12px; }
 .field { display: grid; gap: 5px; min-width: 0; }
-label { font-weight: 500; font-size: 13px; color: var(--muted); }
+label, .label { font-weight: 500; font-size: 13px; color: var(--muted); }
 input {
   width: 100%; min-width: 0; height: 48px; padding: 0 12px; font: 400 16px var(--f-body); color: var(--ink);
   background: var(--field); border: 1px solid var(--line); border-radius: 8px; -webkit-appearance: none; appearance: none;
@@ -127,12 +129,28 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 #amount { font-variant-numeric: tabular-nums; }
 
-.saved { display: grid; gap: 6px; }
-.saved-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.saved-list button {
-  font: 500 14px var(--f-body); color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 999px;
-  padding: 7px 12px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* Tür seçimi: kredi kartı / esnek hesap */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; }
+.seg button {
+  height: 42px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;
+  font: 600 15px var(--f-body);
 }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgba(0,0,0,.12); }
+
+/* Banka düğmeleri */
+.banks { display: flex; flex-wrap: wrap; gap: 8px; }
+.banks button {
+  font: 500 14px var(--f-body); color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 999px;
+  height: 38px; padding: 0 14px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.banks button[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); border-color: var(--btn); }
+
+/* Asgari ödeme satırı */
+.min-line {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 11px 12px;
+  background: var(--field); border: 1px dashed var(--line); border-radius: 8px; font-size: 14px; color: var(--muted);
+}
+.min-line strong { font: 600 22px/1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hint { margin: 0; font-size: 13px; color: var(--muted); }
 .form-msg { margin: 0; font-size: 14px; font-weight: 500; color: var(--red); }
 .form-msg:empty { display: none; }
@@ -151,7 +169,11 @@ ul.pays { list-style: none; margin: 0; padding: 0; display: grid; }
 .pay-main { min-width: 0; display: grid; gap: 7px; }
 .pay-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .pay-top strong { font-weight: 600; overflow-wrap: anywhere; }
+.pay-name { display: grid; gap: 2px; min-width: 0; }
+.pay-kind { font-size: 12px; color: var(--muted); }
+.pay-amts { display: grid; justify-items: end; gap: 4px; }
 .pay-amt { font: 600 20px/1 var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pay-min { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pay-meta { display: flex; flex-wrap: wrap; gap: 6px; }
 .pay-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sm {
@@ -250,25 +272,33 @@ details[open] > summary { margin-bottom: 12px; }
   </section>
 
   <section class="panel" aria-labelledby="formTitle">
-    <h2 id="formTitle">Yeni ekstre ekle</h2>
-    <div class="saved" id="saved" hidden>
-      <span class="hint">Kartlarım (dokununca bir sonraki ayın tarihi önerilir)</span>
-      <div class="saved-list" id="savedList"></div>
-    </div>
+    <h2 id="formTitle">Yeni ödeme ekle</h2>
     <form id="form" novalidate>
       <div class="field">
-        <label for="card">Kart</label>
-        <input id="card" autocomplete="off" maxlength="40" placeholder="örn. Maaş kartı, Bonus, Axess">
+        <span class="label" id="kindLabel">Tür</span>
+        <div class="seg" id="kindSeg" role="group" aria-labelledby="kindLabel">
+          <button type="button" data-kind="card" aria-pressed="true">Kredi kartı</button>
+          <button type="button" data-kind="flex" aria-pressed="false">Esnek hesap</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="card">Banka</label>
+        <div class="banks" id="bankList"></div>
+        <input id="card" autocomplete="off" maxlength="40" placeholder="Listede yoksa banka adını yaz">
       </div>
       <div class="row2">
         <div class="field">
-          <label for="amount">Dönem borcu (₺)</label>
+          <label for="amount" id="amountLabel">Dönem borcu (₺)</label>
           <input id="amount" inputmode="decimal" autocomplete="off" placeholder="4.250,00">
         </div>
         <div class="field">
           <label for="due">Son ödeme tarihi</label>
           <input id="due" type="date">
         </div>
+      </div>
+      <div class="min-line" id="minLine" hidden aria-live="polite">
+        <span>Asgari ödeme (%40)</span>
+        <strong id="minVal"></strong>
       </div>
       <p class="hint" id="whenHint">Bildirim, son ödeme günü saat 10:00'da gelir.</p>
       <p class="form-msg" id="formMsg" role="alert"></p>
@@ -303,7 +333,7 @@ details[open] > summary { margin-bottom: 12px; }
         <button class="btn ghost" type="button" id="repushBtn">Bildirim kaydını yenile</button>
         <button class="btn ghost" type="button" id="refreshBtn">Kayıtları yenile</button>
         <button class="btn ghost" type="button" id="logoutBtn">GitHub anahtarını değiştir</button>
-        <p class="hint">Bildirim her sabah GitHub'da çalışan bir görevle gönderilir. GitHub bazen birkaç dakika gecikebilir. Erken ödersen "Ödendi"ye dokun, o kart için bildirim gelmez.</p>
+        <p class="hint">Bildirim her sabah GitHub'da çalışan bir görevle gönderilir. GitHub bazen birkaç dakika gecikebilir. Erken ödersen "Ödendi"ye dokun, o ödeme için bildirim gelmez.</p>
       </div>
     </details>
   </section>
@@ -319,6 +349,12 @@ details[open] > summary { margin-bottom: 12px; }
   var TZ = "Europe/Istanbul";
   var $ = function (id) { return document.getElementById(id); };
   var money = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
+
+  // Kredi kartında asgari ödeme dönem borcunun %40'ı (sabit).
+  var MIN_PCT = 40;
+  // Hızlı seçim düğmeleri. Listede olmayan banka elle yazılır, sonra o da düğme olarak çıkar.
+  var BANKS = ["Enpara", "Yapı Kredi", "Akbank"];
+  var KIND_NAMES = { card: "Kredi kartı", flex: "Esnek hesap" };
 
   // ---------- Yerel saklama ----------
   var LS = {
@@ -376,6 +412,15 @@ details[open] > summary { margin-bottom: 12px; }
     return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
   }
   function amt(p) { return typeof p.amount === "number" ? money.format(p.amount) : ""; }
+  function kindOf(p) { return p.kind === "flex" ? "flex" : "card"; }
+  function kindName(p) { return KIND_NAMES[kindOf(p)]; }
+  function minOf(amount) { return Math.round(amount * MIN_PCT) / 100; }
+  // Asgari ödeme yalnızca kredi kartında var. Eski kayıtlarda tutardan hesaplanır.
+  function minAmt(p) {
+    if (kindOf(p) !== "card") return "";
+    var m = typeof p.minAmount === "number" ? p.minAmount : typeof p.amount === "number" ? minOf(p.amount) : null;
+    return m == null ? "" : money.format(m);
+  }
   function clean(s) { return String(s || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40); }
   function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -585,7 +630,7 @@ details[open] > summary { margin-bottom: 12px; }
       await mutate(function (d) {
         d.payments.forEach(function (x) { if (x.id === p.id) { x.status = "paid"; x.paidAt = new Date().toISOString(); } });
       }, "Ödendi: " + p.card);
-      toast(fireMs(p.due) > Date.now() && !p.notifiedAt ? "Ödendi olarak işaretlendi. Bu kart için bildirim gelmeyecek." : "Ödendi olarak işaretlendi.");
+      toast(fireMs(p.due) > Date.now() && !p.notifiedAt ? "Ödendi olarak işaretlendi. Bu ödeme için bildirim gelmeyecek." : "Ödendi olarak işaretlendi.");
     });
   }
   function remove(p) {
@@ -640,7 +685,11 @@ details[open] > summary { margin-bottom: 12px; }
         h("span", { class: "d", text: String(Number(p.due.slice(8, 10))) }),
         h("span", { class: "m", text: up(fmt(p.due, { month: "short" })) })),
       h("div", { class: "pay-main" },
-        h("div", { class: "pay-top" }, h("strong", { text: p.card }), amt(p) ? h("span", { class: "pay-amt", text: amt(p) }) : null),
+        h("div", { class: "pay-top" },
+          h("div", { class: "pay-name" }, h("strong", { text: p.card }), h("span", { class: "pay-kind", text: kindName(p) })),
+          amt(p) ? h("div", { class: "pay-amts" },
+            h("span", { class: "pay-amt", text: amt(p) }),
+            minAmt(p) ? h("span", { class: "pay-min", text: "Asgari " + minAmt(p) }) : null) : null),
         h("div", { class: "pay-meta" },
           h("span", { class: "chip", text: longDate(p.due) }),
           inHistory ? null : h("span", { class: "chip " + daysClass(n), text: daysLabel(n) }),
@@ -666,30 +715,43 @@ details[open] > summary { margin-bottom: 12px; }
         info.appendChild(h("p", { class: "hero-empty", text: "GitHub anahtarını girip bildirimlere izin verince ödemelerin burada görünür." }));
       } else {
         info.appendChild(h("p", { class: "hero-card", text: "Bekleyen ödeme yok" }));
-        info.appendChild(h("p", { class: "hero-empty", text: "Ekstren gelince kartı, tutarı ve son ödeme tarihini aşağıya gir." }));
+        info.appendChild(h("p", { class: "hero-empty", text: "Ekstren ya da hesap borcun gelince bankayı, tutarı ve son ödeme tarihini aşağıya gir." }));
       }
       return;
     }
     var n = dayDiff(next.due);
     setLeaf(next.due);
-    info.appendChild(h("p", { class: "eyebrow", id: "heroEyebrow", text: n < 0 ? "Gecikmiş ödeme" : "Sıradaki ödeme" }));
+    info.appendChild(h("p", { class: "eyebrow", id: "heroEyebrow", text: (n < 0 ? "Gecikmiş ödeme" : "Sıradaki ödeme") + " · " + kindName(next) }));
     info.appendChild(h("p", { class: "hero-card", text: next.card }));
     if (amt(next)) info.appendChild(h("div", { class: "hero-amt", text: amt(next) }));
+    if (minAmt(next)) info.appendChild(h("p", { class: "hero-min" }, "Asgari ödeme: ", h("strong", { text: minAmt(next) })));
     info.appendChild(h("div", { class: "hero-meta" }, h("span", { class: "chip " + daysClass(n), text: daysLabel(n) }), statusPill(next)));
   }
 
-  function renderSaved() {
-    var seen = {}, cards = [];
+  // Sabit bankalar + daha önce elle yazılanlar (en yeni önce), en fazla 8 düğme.
+  function bankNames() {
+    var seen = {}, names = [];
+    BANKS.forEach(function (b) { seen[up(b)] = 1; names.push(b); });
     state.data.payments.slice().sort(function (a, b) { return (b.createdAt || "") > (a.createdAt || "") ? 1 : -1; }).forEach(function (p) {
-      var key = up(p.card); if (seen[key]) return; seen[key] = 1; cards.push(p);
+      var key = up(p.card); if (seen[key]) return; seen[key] = 1; names.push(p.card);
     });
-    var box = $("savedList"); box.textContent = "";
-    cards.slice(0, 8).forEach(function (p) {
-      box.appendChild(h("button", { type: "button", text: p.card, onclick: function () {
-        $("card").value = p.card; var s = suggestDue(p.due); if (s) $("due").value = s; updateHint(); $("amount").focus();
+    return names.slice(0, 8);
+  }
+  function renderBanks() {
+    var box = $("bankList"); box.textContent = "";
+    bankNames().forEach(function (name) {
+      box.appendChild(h("button", { type: "button", "aria-pressed": "false", text: name, onclick: function () {
+        $("card").value = name; $("card").setAttribute("aria-invalid", "false"); formErr("", null);
+        syncBankChips(); suggestFromHistory(); $("amount").focus();
       } }));
     });
-    $("saved").hidden = cards.length === 0;
+    syncBankChips();
+  }
+  function syncBankChips() {
+    var cur = up(clean($("card").value));
+    Array.prototype.forEach.call($("bankList").children, function (b) {
+      b.setAttribute("aria-pressed", cur && up(b.textContent) === cur ? "true" : "false");
+    });
   }
 
   function renderSync() {
@@ -734,7 +796,7 @@ details[open] > summary { margin-bottom: 12px; }
       .sort(function (a, b) { return a.due < b.due ? -1 : a.due > b.due ? 1 : 0; });
     var paid = list.filter(function (p) { return p.status === "paid"; }).sort(function (a, b) { return a.due < b.due ? 1 : -1; });
     renderHero(upcoming);
-    renderSaved();
+    renderBanks();
     var ul = $("upList"); ul.textContent = "";
     upcoming.forEach(function (p) { ul.appendChild(payItem(p, false)); });
     $("upCount").textContent = upcoming.length ? upcoming.length + " kayıt" : "";
@@ -748,6 +810,36 @@ details[open] > summary { margin-bottom: 12px; }
   }
 
   // ---------- Form ----------
+  var formKind = "card";
+  var dueAuto = false; // tarih geçmiş kayda bakılarak önerildiyse true; elle seçilince false
+
+  function setKind(k) {
+    formKind = k === "flex" ? "flex" : "card";
+    Array.prototype.forEach.call(document.querySelectorAll("#kindSeg button"), function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-kind") === formKind ? "true" : "false");
+    });
+    $("amountLabel").textContent = formKind === "card" ? "Dönem borcu (₺)" : "Hesap borcu (₺)";
+    updateMin();
+    suggestFromHistory();
+  }
+  function updateMin() {
+    var n = parseAmount($("amount").value);
+    var show = formKind === "card" && typeof n === "number" && !Number.isNaN(n) && n > 0;
+    $("minLine").hidden = !show;
+    $("minVal").textContent = show ? money.format(minOf(n)) : "";
+  }
+  // Aynı banka ve türde önceki kayıt varsa bir sonraki ayın aynı gününü önerir. Elle seçilen tarihe dokunmaz.
+  function suggestFromHistory() {
+    if ($("due").value && !dueAuto) return;
+    var name = up(clean($("card").value));
+    var last = !name ? null : state.data.payments.filter(function (p) { return up(p.card) === name && kindOf(p) === formKind; })
+      .sort(function (a, b) { return a.due < b.due ? 1 : -1; })[0];
+    var s = last ? suggestDue(last.due) : "";
+    if (s) { $("due").value = s; dueAuto = true; }
+    else if (dueAuto) { $("due").value = ""; dueAuto = false; }
+    updateHint();
+  }
+
   function updateHint() {
     var due = $("due").value, hint = $("whenHint");
     if (!due) { hint.textContent = "Bildirim, son ödeme günü saat 10:00'da gelir."; return; }
@@ -767,7 +859,7 @@ details[open] > summary { margin-bottom: 12px; }
     if (submitting) return;
     if (!token) return formErr("Önce kurulumu tamamla: GitHub anahtarını gir.", null);
     var card = clean($("card").value), amount = parseAmount($("amount").value), due = $("due").value;
-    if (!card) return formErr("Kart adını yaz.", "card");
+    if (!card) return formErr("Bankayı seç ya da adını yaz.", "card");
     if (Number.isNaN(amount)) return formErr("Tutarı 4.250,00 gibi yaz.", "amount");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return formErr("Son ödeme tarihini seç.", "due");
     if (dayDiff(due) < 0) return formErr("Bu tarih geçmişte kaldı. Ekstredeki son ödeme tarihini seç.", "due");
@@ -775,10 +867,11 @@ details[open] > summary { margin-bottom: 12px; }
     formErr("", null);
     submitting = true;
     var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Kaydediliyor…";
-    var rec = { id: newId(), card: card, amount: amount, due: due, status: "active", createdAt: new Date().toISOString() };
+    var rec = { id: newId(), kind: formKind, card: card, amount: amount, due: due, status: "active", createdAt: new Date().toISOString() };
+    if (formKind === "card" && typeof amount === "number") rec.minAmount = minOf(amount);
     try {
-      await mutate(function (d) { d.payments.push(rec); }, "Yeni ödeme: " + card + " " + due);
-      $("form").reset(); updateHint();
+      await mutate(function (d) { d.payments.push(rec); }, "Yeni ödeme: " + card + " " + KIND_NAMES[formKind].toLocaleLowerCase("tr-TR") + " " + due);
+      $("form").reset(); dueAuto = false; syncBankChips(); updateMin(); updateHint();
       toast(fireMs(due) > Date.now()
         ? "Tamam. " + longDate(due) + " saat 10:00'da bildirim gelecek."
         : "Kaydedildi. Bugünün 10:00'ı geçtiği için bildirim gelmeyebilir.");
@@ -787,8 +880,14 @@ details[open] > summary { margin-bottom: 12px; }
     }
     submitting = false; btn.disabled = false; btn.textContent = "Hatırlatmayı kur";
   });
-  $("due").addEventListener("change", updateHint);
-  $("due").addEventListener("input", updateHint);
+  $("due").addEventListener("change", function () { dueAuto = false; updateHint(); });
+  $("due").addEventListener("input", function () { dueAuto = false; updateHint(); });
+  $("amount").addEventListener("input", updateMin);
+  $("card").addEventListener("input", syncBankChips);
+  $("card").addEventListener("change", suggestFromHistory);
+  Array.prototype.forEach.call(document.querySelectorAll("#kindSeg button"), function (b) {
+    b.addEventListener("click", function () { setKind(b.getAttribute("data-kind")); });
+  });
   ["card", "amount", "due"].forEach(function (f) { $(f).addEventListener("input", function () { $(f).setAttribute("aria-invalid", "false"); }); });
   $("amount").addEventListener("blur", function () {
     var n = parseAmount($("amount").value);

@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Son Ödeme Günü</title>
+<meta name="description" content="Kredi kartı son ödeme günü hatırlatıcısı.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Son Ödeme">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ECEFF3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E131B" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="config.js"></script>
+<style>
+/* Layout: tek sütunlu telefon uygulaması; üstte sıradaki ödemenin takvim yaprağı, altında ekstre formu, liste ve ayarlar */
+:root {
+  --bg: #ECEFF3;
+  --surface: #FFFFFF;
+  --field: #F6F8FA;
+  --ink: #16202F;
+  --muted: #5A6476;
+  --line: #D4DAE2;
+  --band: #C62832;
+  --band-ink: #FFFFFF;
+  --red: #B8232D;
+  --red-soft: #FBE8E9;
+  --amber: #8F5600;
+  --amber-soft: #FAEFD9;
+  --green: #23704A;
+  --green-soft: #E3F1E8;
+  --btn: #16202F;
+  --btn-ink: #FFFFFF;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --r: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0E131B; --surface: #161D28; --field: #10161F; --ink: #E7EBF1; --muted: #98A2B3; --line: #283244;
+    --band: #B92D36; --band-ink: #FFFFFF; --red: #F06A72; --red-soft: #3A1B1F; --amber: #E6A84F; --amber-soft: #33260F;
+    --green: #5EC28C; --green-soft: #15301F; --btn: #E7EBF1; --btn-ink: #0E131B; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--f-body);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 110px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+
+header.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { font: 700 30px/1 var(--f-display); letter-spacing: .02em; text-transform: uppercase; margin: 0; }
+.sync { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.tagline { color: var(--muted); margin: -12px 0 0; font-size: 14px; }
+
+.banner {
+  background: var(--amber-soft); color: var(--ink); border-radius: var(--r); padding: 14px 16px;
+  display: grid; gap: 4px; font-size: 14px;
+}
+.banner strong { color: var(--amber); }
+
+/* Sıradaki ödeme */
+.hero { display: flex; gap: 18px; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.leaf {
+  flex: none; width: 116px; align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  text-align: center; overflow: hidden;
+  box-shadow: 0 3px 0 -1px var(--surface), 0 3px 0 0 var(--line), 0 6px 0 -1px var(--surface), 0 6px 0 0 var(--line);
+}
+.leaf-band { position: relative; background: var(--band); color: var(--band-ink); font: 600 14px/1 var(--f-display); letter-spacing: .09em; padding: 17px 4px 7px; }
+.leaf-band::before, .leaf-band::after { content: ""; position: absolute; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--bg); }
+.leaf-band::before { left: 28px; }
+.leaf-band::after { right: 28px; }
+.leaf-day { font: 700 66px/1 var(--f-display); padding-top: 8px; font-variant-numeric: tabular-nums; }
+.leaf-wd { font: 600 13px/1 var(--f-display); letter-spacing: .1em; color: var(--muted); padding: 5px 0 12px; }
+.hero-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font: 600 12px/1.2 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.hero-card { font: 600 19px/1.25 var(--f-body); margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.hero-amt { font: 600 36px/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
+.hero-empty { color: var(--muted); margin: 0; }
+
+.chip, .pill {
+  display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); padding: 5px 9px; border-radius: 999px; white-space: nowrap;
+  background: var(--field); color: var(--muted); border: 1px solid var(--line);
+}
+.chip.today, .pill.bad { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.chip.soon, .pill.warn { background: var(--amber-soft); color: var(--amber); border-color: transparent; }
+.pill.ok, .pill.paid { background: var(--green-soft); color: var(--green); border-color: transparent; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; }
+.panel h2 { font: 700 20px/1.1 var(--f-display); letter-spacing: .03em; text-transform: uppercase; margin: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.panel p { margin: 0; }
+
+form { display: grid; gap: 12px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+label { font-weight: 500; font-size: 13px; color: var(--muted); }
+input {
+  width: 100%; min-width: 0; height: 48px; padding: 0 12px; font: 400 16px var(--f-body); color: var(--ink);
+  background: var(--field); border: 1px solid var(--line); border-radius: 8px; -webkit-appearance: none; appearance: none;
+}
+input[type="date"] { display: flex; align-items: center; }
+input::placeholder { color: var(--muted); opacity: .7; }
+input:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+input[aria-invalid="true"] { border-color: var(--red); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#amount { font-variant-numeric: tabular-nums; }
+
+.saved { display: grid; gap: 6px; }
+.saved-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-list button {
+  font: 500 14px var(--f-body); color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 12px; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.form-msg { margin: 0; font-size: 14px; font-weight: 500; color: var(--red); }
+.form-msg:empty { display: none; }
+.ok-msg { color: var(--green); }
+
+.btn { height: 50px; border: 0; border-radius: 8px; cursor: pointer; background: var(--btn); color: var(--btn-ink); font: 600 16px var(--f-body); padding: 0 16px; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); height: 44px; font-size: 15px; }
+
+ul.pays { list-style: none; margin: 0; padding: 0; display: grid; }
+.pay { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.pay:first-child { border-top: 0; padding-top: 2px; }
+.pay-date { text-align: center; padding-top: 1px; }
+.pay-date .d { display: block; font: 700 28px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.pay-date .m { display: block; font: 600 12px/1.2 var(--f-display); letter-spacing: .08em; color: var(--muted); }
+.pay-main { min-width: 0; display: grid; gap: 7px; }
+.pay-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.pay-top strong { font-weight: 600; overflow-wrap: anywhere; }
+.pay-amt { font: 600 20px/1 var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pay-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.pay-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sm {
+  height: 34px; padding: 0 12px; border-radius: 7px; cursor: pointer; font: 500 13px var(--f-body); color: var(--ink);
+  background: transparent; border: 1px solid var(--line); text-decoration: none; display: inline-flex; align-items: center;
+}
+.sm.armed { background: var(--red-soft); color: var(--red); border-color: var(--red); }
+.sm:disabled { opacity: .5; cursor: default; }
+.empty { color: var(--muted); margin: 0; }
+details.history summary, details.settings summary {
+  cursor: pointer; font: 700 18px/1.1 var(--f-display); letter-spacing: .03em; text-transform: uppercase; list-style-position: inside;
+}
+details[open] > summary { margin-bottom: 12px; }
+.pay.is-paid .pay-top strong, .pay.is-paid .pay-amt { color: var(--muted); }
+
+.steps { display: grid; gap: 16px; }
+.step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+.step-n {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  font: 700 15px/1 var(--f-display); background: var(--field); border: 1px solid var(--line); color: var(--muted);
+}
+.step.done .step-n { background: var(--green-soft); color: var(--green); border-color: transparent; }
+.step-body { display: grid; gap: 8px; min-width: 0; }
+.step-body strong { font-weight: 600; }
+.status-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.settings-grid { display: grid; gap: 14px; }
+.settings-grid .btn { width: 100%; }
+
+.toast {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; pointer-events: none;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.toast-in { max-width: 528px; margin: 0 auto; background: var(--ink); color: var(--bg); border-radius: 9px; padding: 12px 14px; font-size: 14px; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+
+@media (max-width: 360px) { .hero { flex-direction: column; } .row2 { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) {
+  .toast-in { animation: rise .18s ease-out; }
+  @keyframes rise { from { transform: translateY(8px); opacity: .4; } to { transform: none; opacity: 1; } }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">Son Ödeme Günü</h1>
+    <span class="sync" id="sync"></span>
+  </header>
+  <p class="tagline">Ekstreni gir, son ödeme günü saat 10:00'da bildirim al.</p>
+
+  <div class="banner" id="installBanner" hidden>
+    <strong>Önce ana ekrana ekle</strong>
+    <span id="installText">Safari'de alttaki Paylaş düğmesine dokun, "Ana Ekrana Ekle"yi seç. Sonra uygulamayı ana ekrandaki simgeden aç. Bildirimler yalnızca oradan açınca çalışır.</span>
+  </div>
+
+  <!-- Kurulum -->
+  <section class="panel" id="setup" aria-labelledby="setupTitle" hidden>
+    <h2 id="setupTitle">Kurulum</h2>
+    <div class="steps">
+      <div class="step" id="stepToken">
+        <span class="step-n">1</span>
+        <div class="step-body">
+          <strong>GitHub anahtarını yapıştır</strong>
+          <span class="hint">Kayıtların gizli GitHub deponda saklanır. Anahtar yalnızca bu telefonda durur.</span>
+          <form id="tokenForm" novalidate>
+            <div class="field">
+              <label for="token">GitHub anahtarı</label>
+              <input id="token" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+            </div>
+            <p class="form-msg" id="tokenMsg" role="alert"></p>
+            <button class="btn" type="submit" id="tokenBtn">Bağlan</button>
+          </form>
+        </div>
+      </div>
+      <div class="step" id="stepPush">
+        <span class="step-n">2</span>
+        <div class="step-body">
+          <strong>Bildirimlere izin ver</strong>
+          <span class="hint" id="pushHint">Son ödeme günü saat 10:00'da bu telefona bildirim gelsin.</span>
+          <button class="btn" type="button" id="pushBtn">Bildirimlere izin ver</button>
+          <p class="form-msg" id="pushMsg" role="alert"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero" aria-labelledby="heroEyebrow">
+    <div class="leaf" aria-hidden="true">
+      <div class="leaf-band" id="leafMonth"></div>
+      <div class="leaf-day" id="leafDay"></div>
+      <div class="leaf-wd" id="leafWd"></div>
+    </div>
+    <div class="hero-info" id="heroInfo">
+      <p class="eyebrow" id="heroEyebrow">Bugün</p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="formTitle">
+    <h2 id="formTitle">Yeni ekstre ekle</h2>
+    <div class="saved" id="saved" hidden>
+      <span class="hint">Kartlarım (dokununca bir sonraki ayın tarihi önerilir)</span>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="card">Kart</label>
+        <input id="card" autocomplete="off" maxlength="40" placeholder="örn. Maaş kartı, Bonus, Axess">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="amount">Dönem borcu (₺)</label>
+          <input id="amount" inputmode="decimal" autocomplete="off" placeholder="4.250,00">
+        </div>
+        <div class="field">
+          <label for="due">Son ödeme tarihi</label>
+          <input id="due" type="date">
+        </div>
+      </div>
+      <p class="hint" id="whenHint">Bildirim, son ödeme günü saat 10:00'da gelir.</p>
+      <p class="form-msg" id="formMsg" role="alert"></p>
+      <button class="btn" type="submit" id="submitBtn">Hatırlatmayı kur</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="upTitle">
+    <div class="panel-head">
+      <h2 id="upTitle">Yaklaşan ödemeler</h2>
+      <span class="count" id="upCount"></span>
+    </div>
+    <ul class="pays" id="upList"></ul>
+    <p class="empty" id="upEmpty" hidden>Yaklaşan ödeme yok. Yeni ekstren gelince yukarıdan ekle.</p>
+  </section>
+
+  <section class="panel" id="histPanel" hidden>
+    <details class="history">
+      <summary id="histTitle">Ödenenler</summary>
+      <ul class="pays" id="histList"></ul>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details class="settings" id="settings">
+      <summary>Ayarlar ve bildirimler</summary>
+      <div class="settings-grid">
+        <div class="status-line"><span class="hint">Bu telefon:</span> <span id="pushState" class="pill">Kontrol ediliyor…</span></div>
+        <div class="status-line"><span class="hint">Kayıtlar:</span> <span id="repoState" class="pill">Bağlı değil</span></div>
+        <button class="btn ghost" type="button" id="testBtn">Deneme bildirimi gönder</button>
+        <p class="hint" id="testMsg" role="status"></p>
+        <button class="btn ghost" type="button" id="repushBtn">Bildirim kaydını yenile</button>
+        <button class="btn ghost" type="button" id="refreshBtn">Kayıtları yenile</button>
+        <button class="btn ghost" type="button" id="logoutBtn">GitHub anahtarını değiştir</button>
+        <p class="hint">Bildirim her sabah GitHub'da çalışan bir görevle gönderilir. GitHub bazen birkaç dakika gecikebilir. Erken ödersen "Ödendi"ye dokun, o kart için bildirim gelmez.</p>
+      </div>
+    </details>
+  </section>
+</div>
+
+<div class="toast" id="toast" hidden><div class="toast-in" id="toastIn"></div></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CFG = window.SOG_CONFIG || {};
+  var TZ = "Europe/Istanbul";
+  var $ = function (id) { return document.getElementById(id); };
+  var money = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
+
+  // ---------- Yerel saklama ----------
+  var LS = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  var token = LS.get("sog.token") || "";
+  var state = { data: emptyData(), loaded: false, loading: false, busy: {}, error: "", syncedAt: 0 };
+  try { var cached = JSON.parse(LS.get("sog.cache") || "null"); if (cached) state.data = normalize(cached); } catch (e) {}
+
+  function emptyData() { return { payments: [], subscriptions: [] }; }
+  function normalize(d) {
+    d = d && typeof d === "object" ? d : {};
+    if (!Array.isArray(d.payments)) d.payments = [];
+    if (!Array.isArray(d.subscriptions)) d.subscriptions = [];
+    d.payments = d.payments.filter(function (p) { return p && typeof p.due === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.due); });
+    return d;
+  }
+
+  // ---------- Tarih yardımcıları (Türkiye saati, UTC+3) ----------
+  function todayStr() {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+    catch (e) { return new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10); }
+  }
+  function fireMs(due) { return Date.parse(due + "T07:00:00Z"); }
+  function dayDiff(due) { return Math.round((Date.parse(due + "T00:00:00Z") - Date.parse(todayStr() + "T00:00:00Z")) / 864e5); }
+  function fmt(due, opts) {
+    var o = { timeZone: "UTC" }; for (var k in opts) o[k] = opts[k];
+    return new Intl.DateTimeFormat("tr-TR", o).format(new Date(due + "T12:00:00Z"));
+  }
+  function up(s) { return s.toLocaleUpperCase("tr-TR"); }
+  function longDate(due) { return fmt(due, { day: "numeric", month: "long", weekday: "long" }); }
+  function shortDate(due) { return fmt(due, { day: "numeric", month: "short" }); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function daysLabel(n) { return n === 0 ? "Bugün" : n === 1 ? "Yarın" : n > 1 ? n + " gün kaldı" : (-n) + " gün geçti"; }
+  function daysClass(n) { return n <= 0 ? "today" : n <= 3 ? "soon" : ""; }
+  function suggestDue(lastDue) {
+    var day = Number(lastDue.slice(8, 10));
+    var t = todayStr(), y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7));
+    for (var i = 0; i < 3; i++) {
+      var last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      var cand = y + "-" + pad(m) + "-" + pad(Math.min(day, last));
+      if (fireMs(cand) > Date.now() + 60000 && cand > lastDue) return cand;
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return "";
+  }
+  function parseAmount(s) {
+    s = String(s || "").replace(/\s|₺|tl/gi, "");
+    if (!s) return null;
+    if (s.indexOf(",") >= 0) s = s.replace(/\./g, "").replace(",", ".");
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+    var n = Number(s);
+    return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+  }
+  function amt(p) { return typeof p.amount === "number" ? money.format(p.amount) : ""; }
+  function clean(s) { return String(s || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40); }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  // ---------- DOM ----------
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      var v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return el;
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    $("toastIn").textContent = msg; $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $("toast").hidden = true; }, 6000);
+  }
+
+  // ---------- GitHub (gizli veri deposu) ----------
+  function b64enc(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64dec(b64) {
+    var bin = atob(String(b64).replace(/\s/g, ""));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function ghFetch(path, opts) {
+    opts = opts || {};
+    var headers = { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + token, "X-GitHub-Api-Version": "2022-11-28" };
+    if (opts.body) headers["Content-Type"] = "application/json";
+    return fetch("https://api.github.com/repos/" + CFG.owner + "/" + CFG.repo + "/" + path, {
+      method: opts.method || "GET", headers: headers, body: opts.body, cache: "no-store"
+    });
+  }
+  function httpError(status, where) {
+    var e = new Error(String(status)); e.status = status; e.where = where; return e;
+  }
+  function errorText(e) {
+    if (!e || e.status == null) return "İnternete bağlanılamadı. Bağlantını kontrol edip tekrar dene.";
+    if (e.status === 401) return "GitHub anahtarı geçersiz ya da süresi dolmuş. Ayarlar'dan yeni anahtar gir.";
+    if (e.status === 403 && e.where === "actions") return "Anahtarın deneme bildirimi başlatma izni yok. Anahtara \"Actions: Read and write\" izni ver.";
+    if (e.status === 403) return "Anahtarın bu depoya yazma izni yok. Anahtarda \"Contents: Read and write\" iznini aç.";
+    if (e.status === 404 && e.where === "actions") return "Bildirim görevi bulunamadı. Veri deposunda hatirlat.yml dosyası olmalı.";
+    if (e.status === 404) return "\"" + CFG.repo + "\" deposu bulunamadı ya da anahtar bu depoyu göremiyor.";
+    if (e.status === "conflict") return "Kayıt başka bir yerde aynı anda değişti. Bir daha dene.";
+    return "GitHub'a kaydedilemedi (hata " + e.status + "). Biraz sonra tekrar dene.";
+  }
+
+  async function loadRemote() {
+    var res;
+    try { res = await ghFetch("contents/data.json?ref=" + encodeURIComponent(CFG.branch)); }
+    catch (e) { throw httpError(null); }
+    if (res.status === 404) {
+      var repo = await ghFetch("").catch(function () { return null; });
+      if (repo && repo.ok) return { data: emptyData(), sha: null };
+      throw httpError(404);
+    }
+    if (!res.ok) throw httpError(res.status);
+    var j = await res.json();
+    return { data: normalize(JSON.parse(b64dec(j.content))), sha: j.sha };
+  }
+
+  async function refresh(quiet) {
+    if (!token || state.loading) return;
+    state.loading = true; renderSync();
+    try {
+      var r = await loadRemote();
+      state.data = r.data; state.loaded = true; state.error = ""; state.syncedAt = Date.now();
+      LS.set("sog.cache", JSON.stringify(state.data));
+    } catch (e) {
+      state.error = errorText(e);
+      if (!quiet) toast(state.error);
+    }
+    state.loading = false;
+    render();
+    checkPush(true);
+  }
+
+  // Değişikliği en güncel dosyaya uygular. Bildirim görevi aynı anda yazdıysa yeniden dener.
+  async function mutate(fn, message) {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      var cur = await loadRemote();
+      var next = JSON.parse(JSON.stringify(cur.data));
+      fn(next);
+      var body = { message: message, content: b64enc(JSON.stringify(next, null, 2) + "\n"), branch: CFG.branch };
+      if (cur.sha) body.sha = cur.sha;
+      var res;
+      try { res = await ghFetch("contents/data.json", { method: "PUT", body: JSON.stringify(body) }); }
+      catch (e) { throw httpError(null); }
+      if (res.ok) {
+        state.data = normalize(next); state.loaded = true; state.error = ""; state.syncedAt = Date.now();
+        LS.set("sog.cache", JSON.stringify(state.data));
+        render();
+        return;
+      }
+      if (res.status === 409 || res.status === 422) continue;
+      throw httpError(res.status);
+    }
+    throw httpError("conflict");
+  }
+
+  // ---------- Bildirim (Web Push) ----------
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  var pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  var swReg = null;
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").then(function (r) { swReg = r; checkPush(false); }).catch(function () {});
+  }
+
+  function urlB64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    var raw = atob(base64), out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  var pushStatus = "unknown"; // on | off | denied | unsupported | unknown
+  async function currentSubscription() {
+    if (!pushSupported) return null;
+    var reg = swReg || await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+
+  // Abonelik telefonda var ama depoda yoksa (ör. yeniden kurulum) sessizce ekler.
+  async function checkPush(syncToRepo) {
+    if (!pushSupported) { pushStatus = "unsupported"; renderPush(); return; }
+    if (Notification.permission === "denied") { pushStatus = "denied"; renderPush(); return; }
+    try {
+      var sub = await currentSubscription();
+      if (!sub) { pushStatus = "off"; renderPush(); return; }
+      var endpoint = sub.endpoint;
+      var known = state.data.subscriptions.some(function (s) { return s.endpoint === endpoint; });
+      pushStatus = known || !state.loaded ? "on" : "off";
+      renderPush();
+      if (!known && syncToRepo && token && state.loaded) {
+        await saveSubscription(sub);
+        pushStatus = "on"; renderPush();
+      }
+    } catch (e) { renderPush(); }
+  }
+
+  async function saveSubscription(sub) {
+    var j = sub.toJSON();
+    await mutate(function (d) {
+      d.subscriptions = d.subscriptions.filter(function (s) { return s.endpoint !== j.endpoint; });
+      d.subscriptions.push({ endpoint: j.endpoint, keys: j.keys, addedAt: new Date().toISOString(), device: isIOS ? "iPhone" : "Telefon" });
+    }, "Bildirim cihazı eklendi");
+  }
+
+  function enablePush(msgEl, forceNew) {
+    msgEl.className = "form-msg"; msgEl.textContent = "";
+    if (!pushSupported) {
+      msgEl.textContent = isIOS && !standalone
+        ? "Bildirim için uygulamayı ana ekrandaki simgeden açman gerekiyor."
+        : "Bu tarayıcı bildirimleri desteklemiyor. iPhone'da iOS 16.4 ya da üstü gerekir.";
+      return;
+    }
+    if (!token) { msgEl.textContent = "Önce GitHub anahtarını gir."; return; }
+    // iOS izni yalnızca dokunuşun hemen ardından sorar; bu çağrı ilk iş olmalı.
+    Notification.requestPermission().then(async function (perm) {
+      if (perm !== "granted") {
+        pushStatus = perm === "denied" ? "denied" : "off"; renderPush();
+        msgEl.textContent = "Bildirim izni verilmedi. iPhone Ayarlar › Bildirimler › Son Ödeme'den açabilirsin.";
+        return;
+      }
+      try {
+        var reg = swReg || await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (sub && forceNew) { await sub.unsubscribe().catch(function () {}); sub = null; }
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(CFG.vapidPublicKey) });
+        await saveSubscription(sub);
+        pushStatus = "on"; renderPush();
+        msgEl.className = "form-msg ok-msg";
+        msgEl.textContent = "Tamam. Bu telefon bildirim alacak.";
+        toast("Bildirimler açık. İstersen Ayarlar'dan deneme bildirimi gönder.");
+      } catch (e) {
+        msgEl.textContent = e && e.status !== undefined ? errorText(e) : "Bildirim kaydı yapılamadı: " + (e && e.message ? e.message : "bilinmeyen hata");
+      }
+    });
+  }
+
+  // ---------- İşlemler ----------
+  async function withBusy(id, fn) {
+    if (state.busy[id]) return;
+    state.busy[id] = true; render();
+    try { await fn(); } catch (e) { toast(errorText(e)); }
+    delete state.busy[id]; render();
+  }
+  function markPaid(p) {
+    return withBusy(p.id, async function () {
+      await mutate(function (d) {
+        d.payments.forEach(function (x) { if (x.id === p.id) { x.status = "paid"; x.paidAt = new Date().toISOString(); } });
+      }, "Ödendi: " + p.card);
+      toast(fireMs(p.due) > Date.now() && !p.notifiedAt ? "Ödendi olarak işaretlendi. Bu kart için bildirim gelmeyecek." : "Ödendi olarak işaretlendi.");
+    });
+  }
+  function remove(p) {
+    return withBusy(p.id, async function () {
+      await mutate(function (d) { d.payments = d.payments.filter(function (x) { return x.id !== p.id; }); }, "Silindi: " + p.card);
+      toast("Silindi.");
+    });
+  }
+  function undoPaid(p) {
+    return withBusy(p.id, async function () {
+      await mutate(function (d) {
+        d.payments.forEach(function (x) { if (x.id === p.id) { x.status = "active"; delete x.paidAt; } });
+      }, "Ödenmedi: " + p.card);
+      toast("Geri alındı.");
+    });
+  }
+  function confirmTap(btn, label, fn) {
+    if (btn.dataset.armed === "1") { clearTimeout(btn._t); fn(); return; }
+    var orig = btn.textContent;
+    btn.dataset.armed = "1"; btn.textContent = label; btn.classList.add("armed");
+    btn._t = setTimeout(function () { btn.dataset.armed = ""; btn.textContent = orig; btn.classList.remove("armed"); }, 4000);
+  }
+
+  // ---------- Görünüm ----------
+  function statusPill(p) {
+    if (state.busy[p.id]) return h("span", { class: "pill", text: "Kaydediliyor…" });
+    if (p.status === "paid") return h("span", { class: "pill paid", text: "Ödendi" });
+    if (p.notifiedAt) return h("span", { class: "pill", text: "Bildirim gönderildi" });
+    var n = dayDiff(p.due);
+    if (fireMs(p.due) > Date.now()) {
+      return state.data.subscriptions.length
+        ? h("span", { class: "pill ok", text: "Bildirim " + shortDate(p.due) + " 10:00" })
+        : h("span", { class: "pill warn", text: "Bildirim izni yok" });
+    }
+    if (n === 0) return h("span", { class: "pill warn", text: "Bildirim bekleniyor" });
+    return h("span", { class: "pill bad", text: "Bildirim gönderilemedi" });
+  }
+
+  function payItem(p, inHistory) {
+    var n = dayDiff(p.due), busy = !!state.busy[p.id];
+    var actions = h("div", { class: "pay-actions" });
+    if (!inHistory) {
+      actions.appendChild(h("button", { class: "sm", type: "button", disabled: busy, text: "Ödendi",
+        onclick: function (e) { confirmTap(e.currentTarget, "Ödendi mi? Onayla", function () { markPaid(p); }); } }));
+    } else {
+      actions.appendChild(h("button", { class: "sm", type: "button", disabled: busy, text: "Geri al", onclick: function () { undoPaid(p); } }));
+    }
+    actions.appendChild(h("button", { class: "sm", type: "button", disabled: busy, text: "Sil",
+      onclick: function (e) { confirmTap(e.currentTarget, "Silinsin mi?", function () { remove(p); }); } }));
+    return h("li", { class: "pay" + (p.status === "paid" ? " is-paid" : "") },
+      h("div", { class: "pay-date", "aria-hidden": "true" },
+        h("span", { class: "d", text: String(Number(p.due.slice(8, 10))) }),
+        h("span", { class: "m", text: up(fmt(p.due, { month: "short" })) })),
+      h("div", { class: "pay-main" },
+        h("div", { class: "pay-top" }, h("strong", { text: p.card }), amt(p) ? h("span", { class: "pay-amt", text: amt(p) }) : null),
+        h("div", { class: "pay-meta" },
+          h("span", { class: "chip", text: longDate(p.due) }),
+          inHistory ? null : h("span", { class: "chip " + daysClass(n), text: daysLabel(n) }),
+          statusPill(p)),
+        actions));
+  }
+
+  function setLeaf(due) {
+    $("leafMonth").textContent = up(fmt(due, { month: "long", year: "numeric" }));
+    $("leafDay").textContent = String(Number(due.slice(8, 10)));
+    $("leafWd").textContent = up(fmt(due, { weekday: "long" }));
+  }
+
+  function renderHero(upcoming) {
+    var info = $("heroInfo"); info.textContent = "";
+    var next = upcoming[0];
+    if (!next) {
+      setLeaf(todayStr());
+      info.appendChild(h("p", { class: "eyebrow", id: "heroEyebrow", text: "Bugün" }));
+      if (token && !state.loaded && state.loading) info.appendChild(h("p", { class: "hero-empty", text: "Kayıtların yükleniyor…" }));
+      else if (!token) {
+        info.appendChild(h("p", { class: "hero-card", text: "Kurulumu tamamla" }));
+        info.appendChild(h("p", { class: "hero-empty", text: "GitHub anahtarını girip bildirimlere izin verince ödemelerin burada görünür." }));
+      } else {
+        info.appendChild(h("p", { class: "hero-card", text: "Bekleyen ödeme yok" }));
+        info.appendChild(h("p", { class: "hero-empty", text: "Ekstren gelince kartı, tutarı ve son ödeme tarihini aşağıya gir." }));
+      }
+      return;
+    }
+    var n = dayDiff(next.due);
+    setLeaf(next.due);
+    info.appendChild(h("p", { class: "eyebrow", id: "heroEyebrow", text: n < 0 ? "Gecikmiş ödeme" : "Sıradaki ödeme" }));
+    info.appendChild(h("p", { class: "hero-card", text: next.card }));
+    if (amt(next)) info.appendChild(h("div", { class: "hero-amt", text: amt(next) }));
+    info.appendChild(h("div", { class: "hero-meta" }, h("span", { class: "chip " + daysClass(n), text: daysLabel(n) }), statusPill(next)));
+  }
+
+  function renderSaved() {
+    var seen = {}, cards = [];
+    state.data.payments.slice().sort(function (a, b) { return (b.createdAt || "") > (a.createdAt || "") ? 1 : -1; }).forEach(function (p) {
+      var key = up(p.card); if (seen[key]) return; seen[key] = 1; cards.push(p);
+    });
+    var box = $("savedList"); box.textContent = "";
+    cards.slice(0, 8).forEach(function (p) {
+      box.appendChild(h("button", { type: "button", text: p.card, onclick: function () {
+        $("card").value = p.card; var s = suggestDue(p.due); if (s) $("due").value = s; updateHint(); $("amount").focus();
+      } }));
+    });
+    $("saved").hidden = cards.length === 0;
+  }
+
+  function renderSync() {
+    var s = $("sync");
+    if (!token) { s.textContent = ""; return; }
+    if (state.loading) { s.textContent = "Eşitleniyor…"; return; }
+    if (state.error) { s.textContent = "Eşitlenemedi"; return; }
+    s.textContent = state.syncedAt ? "Güncel" : "";
+  }
+
+  function renderPush() {
+    var el = $("pushState");
+    var map = {
+      on: ["pill ok", "Bildirim alıyor"],
+      off: ["pill warn", "Bildirim kapalı"],
+      denied: ["pill bad", "Bildirim izni reddedildi"],
+      unsupported: ["pill warn", isIOS && !standalone ? "Ana ekrandan açılmadı" : "Bildirim desteklenmiyor"],
+      unknown: ["pill", "Kontrol ediliyor…"]
+    };
+    var m = map[pushStatus] || map.unknown;
+    el.className = m[0]; el.textContent = m[1];
+    $("stepPush").classList.toggle("done", pushStatus === "on");
+    $("pushBtn").hidden = pushStatus === "on";
+    if (pushStatus === "on") $("pushHint").textContent = "Bu telefon bildirim alacak.";
+    renderSetup();
+  }
+
+  function renderSetup() {
+    var needsSetup = !token || pushStatus !== "on";
+    $("setup").hidden = !needsSetup;
+    $("stepToken").classList.toggle("done", !!token);
+    $("tokenForm").hidden = !!token;
+    var repo = $("repoState");
+    if (!token) { repo.className = "pill warn"; repo.textContent = "Bağlı değil"; }
+    else if (state.error) { repo.className = "pill bad"; repo.textContent = "Erişilemiyor"; }
+    else { repo.className = "pill ok"; repo.textContent = CFG.owner + "/" + CFG.repo; }
+  }
+
+  function render() {
+    var list = state.data.payments;
+    var upcoming = list.filter(function (p) { return p.status !== "paid"; })
+      .sort(function (a, b) { return a.due < b.due ? -1 : a.due > b.due ? 1 : 0; });
+    var paid = list.filter(function (p) { return p.status === "paid"; }).sort(function (a, b) { return a.due < b.due ? 1 : -1; });
+    renderHero(upcoming);
+    renderSaved();
+    var ul = $("upList"); ul.textContent = "";
+    upcoming.forEach(function (p) { ul.appendChild(payItem(p, false)); });
+    $("upCount").textContent = upcoming.length ? upcoming.length + " kayıt" : "";
+    $("upEmpty").hidden = upcoming.length > 0 || (token && !state.loaded);
+    var hl = $("histList"); hl.textContent = "";
+    paid.forEach(function (p) { hl.appendChild(payItem(p, true)); });
+    $("histTitle").textContent = "Ödenenler (" + paid.length + ")";
+    $("histPanel").hidden = paid.length === 0;
+    renderSync();
+    renderSetup();
+  }
+
+  // ---------- Form ----------
+  function updateHint() {
+    var due = $("due").value, hint = $("whenHint");
+    if (!due) { hint.textContent = "Bildirim, son ödeme günü saat 10:00'da gelir."; return; }
+    hint.textContent = fireMs(due) > Date.now() + 60000
+      ? "Bildirim " + longDate(due) + ", saat 10:00'da gelecek."
+      : dayDiff(due) === 0 ? "Bugünün 10:00'ı geçti, bildirim gelmeyebilir. Bugün ödemeyi unutma." : "Bu tarih geçmişte kaldı.";
+  }
+  function formErr(msg, field) {
+    $("formMsg").textContent = msg;
+    ["card", "amount", "due"].forEach(function (f) { $(f).setAttribute("aria-invalid", f === field ? "true" : "false"); });
+    if (field) $(field).focus();
+  }
+
+  var submitting = false;
+  $("form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (submitting) return;
+    if (!token) return formErr("Önce kurulumu tamamla: GitHub anahtarını gir.", null);
+    var card = clean($("card").value), amount = parseAmount($("amount").value), due = $("due").value;
+    if (!card) return formErr("Kart adını yaz.", "card");
+    if (Number.isNaN(amount)) return formErr("Tutarı 4.250,00 gibi yaz.", "amount");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return formErr("Son ödeme tarihini seç.", "due");
+    if (dayDiff(due) < 0) return formErr("Bu tarih geçmişte kaldı. Ekstredeki son ödeme tarihini seç.", "due");
+    if (dayDiff(due) > 400) return formErr("Tarih bir yıldan daha ileride. Ekstredeki tarihi kontrol et.", "due");
+    formErr("", null);
+    submitting = true;
+    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Kaydediliyor…";
+    var rec = { id: newId(), card: card, amount: amount, due: due, status: "active", createdAt: new Date().toISOString() };
+    try {
+      await mutate(function (d) { d.payments.push(rec); }, "Yeni ödeme: " + card + " " + due);
+      $("form").reset(); updateHint();
+      toast(fireMs(due) > Date.now()
+        ? "Tamam. " + longDate(due) + " saat 10:00'da bildirim gelecek."
+        : "Kaydedildi. Bugünün 10:00'ı geçtiği için bildirim gelmeyebilir.");
+    } catch (err) {
+      formErr(errorText(err), null);
+    }
+    submitting = false; btn.disabled = false; btn.textContent = "Hatırlatmayı kur";
+  });
+  $("due").addEventListener("change", updateHint);
+  $("due").addEventListener("input", updateHint);
+  ["card", "amount", "due"].forEach(function (f) { $(f).addEventListener("input", function () { $(f).setAttribute("aria-invalid", "false"); }); });
+  $("amount").addEventListener("blur", function () {
+    var n = parseAmount($("amount").value);
+    if (typeof n === "number" && !Number.isNaN(n)) $("amount").value = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  });
+  $("due").min = todayStr();
+
+  // ---------- Kurulum ve ayarlar ----------
+  $("tokenForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var t = $("token").value.trim();
+    var msg = $("tokenMsg"); msg.textContent = "";
+    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(t)) { msg.textContent = "Bu bir GitHub anahtarına benzemiyor. \"github_pat_\" ile başlamalı."; return; }
+    var btn = $("tokenBtn"); btn.disabled = true; btn.textContent = "Kontrol ediliyor…";
+    var prev = token; token = t;
+    try {
+      var r = await loadRemote();
+      LS.set("sog.token", t);
+      state.data = r.data; state.loaded = true; state.error = ""; state.syncedAt = Date.now();
+      LS.set("sog.cache", JSON.stringify(state.data));
+      $("token").value = "";
+      render(); checkPush(true);
+      toast("Bağlandı. Şimdi bildirimlere izin ver.");
+    } catch (err) {
+      token = prev;
+      msg.textContent = errorText(err);
+    }
+    btn.disabled = false; btn.textContent = "Bağlan";
+  });
+
+  $("pushBtn").addEventListener("click", function () { enablePush($("pushMsg"), false); });
+  $("repushBtn").addEventListener("click", function () { enablePush($("testMsg"), true); });
+  $("refreshBtn").addEventListener("click", function () { refresh(false); });
+  $("logoutBtn").addEventListener("click", function (e) {
+    confirmTap(e.currentTarget, "Anahtar silinsin mi? Onayla", function () {
+      LS.del("sog.token"); token = ""; state.loaded = false; state.error = "";
+      render(); $("setup").scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  $("testBtn").addEventListener("click", async function () {
+    var btn = $("testBtn"), msg = $("testMsg");
+    if (!token) { msg.textContent = "Önce GitHub anahtarını gir."; return; }
+    if (!state.data.subscriptions.length) { msg.textContent = "Kayıtlı telefon yok. Önce \"Bildirimlere izin ver\"e dokun."; return; }
+    btn.disabled = true; msg.textContent = "Gönderiliyor…";
+    try {
+      var res = await ghFetch("actions/workflows/" + CFG.workflow + "/dispatches", {
+        method: "POST", body: JSON.stringify({ ref: CFG.branch, inputs: { test: "true" } })
+      });
+      if (!res.ok) throw httpError(res.status, "actions");
+      msg.textContent = "İstek gitti. GitHub görevi başlatınca bildirim gelir, genelde 1 dakika sürer.";
+    } catch (err) {
+      msg.textContent = err && err.status !== undefined ? errorText(err) : "İnternete bağlanılamadı.";
+    }
+    btn.disabled = false;
+  });
+
+  // ---------- Başlat ----------
+  if (!standalone) {
+    $("installBanner").hidden = false;
+    if (!isIOS) $("installText").textContent = "Tarayıcı menüsünden \"Ana ekrana ekle\"yi seç, sonra uygulamayı ana ekrandaki simgeden aç.";
+  }
+  if (!CFG.owner || CFG.owner === "GITHUB_KULLANICI") {
+    $("tokenMsg").textContent = "Uygulama henüz yapılandırılmadı (config.js).";
+  }
+  setLeaf(todayStr());
+  render();
+  checkPush(false);
+  if (token) refresh(true);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && token && Date.now() - state.syncedAt > 30000) refresh(true);
+  });
+})();
+</script>
+</body>
+</html>
